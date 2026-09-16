@@ -1,0 +1,33 @@
+# Local configuration and Python environments
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+
+# SQLite databases and journal/WAL sidecars
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+
+# Python and test/tool caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Packaging and local editor/OS artifacts
+build/
+dist/
+*.egg-info/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
