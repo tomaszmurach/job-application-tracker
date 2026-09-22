@@ -1,5 +1,9 @@
 # Job Application Tracker
 
+> [!NOTE]
+> **Documentation update in progress.**
+> The project has recently been extended with Docker, PostgreSQL, CI/CD, container registry publishing, and Kubernetes deployment infrastructure. The README is being updated to reflect the current architecture and setup.
+
 ## 1. Overview
 
 Job Application Tracker is an asynchronous REST API built with FastAPI for
