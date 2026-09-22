@@ -1,10 +1,9 @@
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
 from sqlalchemy import text
-
-import asyncio
 
 from database import engine
 from routers.applications import router as applications_router
