@@ -1,10 +1,32 @@
+import asyncio
+from collections.abc import Iterator
 from datetime import datetime
+from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from httpx import AsyncClient
 
 pytestmark = pytest.mark.asyncio
+
+
+@pytest.fixture
+def readiness_probe(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[MagicMock]:
+    import main
+
+    probe = MagicMock()
+    probe.__aenter__.return_value = AsyncMock()
+    # AsyncEngine.connect is read-only on instances; replace main's reference.
+    # Preserve real disposal and restore before the client shuts down lifespan.
+    engine = SimpleNamespace(
+        connect=MagicMock(return_value=probe), dispose=main.engine.dispose
+    )
+    with monkeypatch.context() as patch:
+        patch.setattr(main, "engine", engine)
+        yield probe
 
 
 async def test_health_check(client: AsyncClient) -> None:
@@ -13,10 +35,56 @@ async def test_health_check(client: AsyncClient) -> None:
     assert response.json() == {"status": "ok"}
 
 
-async def test_readiness_check(client: AsyncClient) -> None:
+async def test_readiness_check(
+    client: AsyncClient, readiness_probe: MagicMock
+) -> None:
     response = await client.get("/ready")
     assert response.status_code == 200
     assert response.json() == {"status": "ready"}
+    readiness_probe.__aenter__.return_value.execute.assert_awaited_once()
+
+
+@pytest.mark.parametrize("failure_stage", ["connect", "probe"])
+async def test_readiness_database_failure(
+    client: AsyncClient, readiness_probe: MagicMock, failure_stage: str
+) -> None:
+    error = RuntimeError("Internal database error details")
+    if failure_stage == "connect":
+        readiness_probe.__aenter__.side_effect = error
+    else:
+        readiness_probe.__aenter__.return_value.execute.side_effect = error
+
+    response = await client.get("/ready")
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Database unavailable"}
+
+    response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+async def test_readiness_timeout(
+    client: AsyncClient, readiness_probe: MagicMock
+) -> None:
+    cancelled = asyncio.Event()
+
+    async def blocked_query(*args: Any, **kwargs: Any) -> None:
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            cancelled.set()
+            raise
+
+    readiness_probe.__aenter__.return_value.execute.side_effect = blocked_query
+    # Exercise the real 0.8-second deadline; bound the test if it stops working.
+    response = await asyncio.wait_for(client.get("/ready"), timeout=3)
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Database unavailable"}
+    assert cancelled.is_set()
+
+    response = await client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
 
 
 async def test_create_application(
