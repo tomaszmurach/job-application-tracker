@@ -19,25 +19,24 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table(
-        "applications",
-        schema=None,
-        recreate="always",
-    ) as batch_op:
-        batch_op.add_column(
-            sa.Column(
-                "applied_at",
-                sa.DateTime(),
-                server_default=sa.text("(CURRENT_TIMESTAMP)"),
-                nullable=False,
-            )
-        )
+    column = sa.Column(
+        "applied_at",
+        sa.DateTime(),
+        server_default=sa.text("(CURRENT_TIMESTAMP)"),
+        nullable=False,
+    )
+    if op.get_bind().dialect.name == "sqlite":
+        # SQLite needs table recreation to add a column with this default.
+        with op.batch_alter_table("applications", recreate="always") as batch_op:
+            batch_op.add_column(column)
+    else:
+        # Native ALTER preserves PostgreSQL's existing table and ID sequence.
+        op.add_column("applications", column)
 
 
 def downgrade() -> None:
-    with op.batch_alter_table(
-        "applications",
-        schema=None,
-        recreate="always",
-    ) as batch_op:
-        batch_op.drop_column("applied_at")
+    if op.get_bind().dialect.name == "sqlite":
+        with op.batch_alter_table("applications", recreate="always") as batch_op:
+            batch_op.drop_column("applied_at")
+    else:
+        op.drop_column("applications", "applied_at")
