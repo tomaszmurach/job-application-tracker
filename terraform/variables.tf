@@ -22,9 +22,8 @@ variable "container_app_name" {
 }
 
 variable "container_image" {
-  description = "Container image used by the API"
+  description = "Immutable container image used by the API and migration job"
   type        = string
-  default     = "ghcr.io/tomaszmurach/job-application-tracker:latest"
 }
 
 variable "postgres_server_name" {
