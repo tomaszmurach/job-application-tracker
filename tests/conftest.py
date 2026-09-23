@@ -1,3 +1,4 @@
+import sys
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -6,9 +7,6 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
-import sys
-from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
