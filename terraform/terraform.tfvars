@@ -1,3 +1,3 @@
 resource_group_name = "job-tracker-terraform-rg"
 location            = "West Europe"
-container_image     = "ghcr.io/tomaszmurach/job-application-tracker:f11d49483482339d9e00799f96323cb16821e139"
+container_image     = "ghcr.io/tomaszmurach/job-application-tracker:837f80ff89d17996eed91fdad52c99dfc3b81014"
