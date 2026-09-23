@@ -11,7 +11,15 @@ CI validates changes and publishes images. Azure deployment and migrations remai
 manual. The [operations runbook](docs/operations.md) covers release ordering and
 troubleshooting.
 
-## 2. Architecture and stack
+## 2. Live demo
+
+**Swagger UI:** https://job-tracker-api.blackmeadow-6e76cb9e.westeurope.azurecontainerapps.io/docs
+
+The API is deployed on Azure Container Apps with PostgreSQL Flexible Server.
+The environment is intended for portfolio/demo use only. CRUD endpoints are
+intentionally unauthenticated, so only synthetic or disposable data should be used.
+
+## 3. Architecture and stack
 
 Requests flow from FastAPI through an async SQLAlchemy session to PostgreSQL in
 container/deployed environments, or SQLite for lightweight local development.
@@ -32,7 +40,7 @@ Direct dependency versions are pinned in [requirements.txt](requirements.txt) an
 [requirements-dev.txt](requirements-dev.txt). Request schemas are separate from
 ORM models; database-backed requests use their own async sessions.
 
-## 3. API endpoints
+## 4. API endpoints
 
 | Method | Path | Behavior | Success |
 | --- | --- | --- | --- |
@@ -84,7 +92,7 @@ PATCH uses only explicitly supplied fields:
 | `{"company": null}` | Reject with 422; likewise for position and status |
 | `{}` | Leave the record unchanged |
 
-## 4. Local quick start
+## 5. Local quick start
 
 Clone the repository and enter its root:
 
@@ -148,7 +156,7 @@ migrations: SQLite batch recreation requires database reflection. The `applied_a
 migration uses batch recreation on SQLite and native column alterations on
 PostgreSQL to preserve the existing ID sequence.
 
-## 5. Tests
+## 6. Tests
 
 With development dependencies installed:
 
@@ -186,7 +194,7 @@ rows, sequence/table identity, a new generated ID above existing IDs, and
 `applied_at` default/nullability. It also checks downgrade/re-upgrade and removes
 its container in fixture cleanup. It never targets Azure.
 
-## 6. Docker Compose
+## 7. Docker Compose
 
 The [Dockerfile](Dockerfile) installs dependencies in a cached layer, explicitly
 copies runtime files, and runs as the non-root `app` user. The restrictive
@@ -220,7 +228,7 @@ docker compose down
 database volume. Use disposable data, and stop another local API before binding
 the same port.
 
-## 7. CI and GHCR image publishing
+## 8. CI and GHCR image publishing
 
 [GitHub Actions](.github/workflows/ci.yml) validates pushes to `main`, pull requests
 targeting `main`, and manual workflow runs. Validation installs Python 3.13
@@ -240,7 +248,7 @@ CI does not run Terraform, deploy Azure resources, or execute deployed migration
 Current deployment definitions assume the GHCR image is publicly pullable; they
 do not configure private-registry credentials.
 
-## 8. Kubernetes
+## 9. Kubernetes
 
 The [k8s/](k8s/) manifests are a local, kind-oriented deployment example:
 
@@ -258,7 +266,7 @@ merely because a new release exists: explicitly delete/recreate it when no
 migration is active. Follow the [Kubernetes runbook](docs/operations.md#local-kubernetes)
 instead of applying the entire directory without migration ordering.
 
-## 9. Terraform / Azure architecture
+## 10. Terraform / Azure architecture
 
 [terraform/](terraform/) manages a workload Resource Group, Container Apps
 environment, HTTPS API Container App, PostgreSQL 17 Flexible Server/database,
@@ -289,7 +297,7 @@ and credentials out of documentation and version control. See the
 [backend prerequisites](docs/operations.md#azure-prerequisites) and
 [Azure Blob backend reference](https://developer.hashicorp.com/terraform/language/backend/azurerm).
 
-## 10. Azure deployment and migration workflow
+## 11. Azure deployment and migration workflow
 
 For an existing environment, the intended manual release order is:
 
@@ -315,7 +323,7 @@ is no automatic first-deployment schema gate in this configuration.
 **Readiness checks database connectivity, not the Alembic revision or pending
 migrations. Migration ordering remains an operator responsibility.**
 
-## 11. Health and readiness semantics
+## 12. Health and readiness semantics
 
 | Endpoint | Implementation | Meaning |
 | --- | --- | --- |
@@ -329,7 +337,7 @@ not check table existence, schema compatibility, or whether migrations ran.
 Azure probe timeouts are two seconds, longer than the application's readiness
 timeout. Cold starts can delay the first response when the app scales to zero.
 
-## 12. Observability and troubleshooting
+## 13. Observability and troubleshooting
 
 Use Container Apps execution status, revision state, and console/system logs;
 see [diagnostic commands](docs/operations.md#azure-diagnostics-and-recovery).
@@ -351,7 +359,7 @@ If migrations fail, inspect their execution before rolling out the API. If an
 image fails to start, inspect provisioning and pull errors before retrying. An
 image rollback does not undo database migrations.
 
-## 13. Known limitations and trade-offs
+## 14. Known limitations and trade-offs
 
 - This is a portfolio deployment, not an enterprise production platform.
 - CRUD endpoints are unauthenticated. Use synthetic/disposable data; there is no
@@ -372,7 +380,7 @@ image rollback does not undo database migrations.
 - SQLite keeps local setup fast but differs from PostgreSQL in concurrency and
   migrations; the focused regression is not a duplicate PostgreSQL API suite.
 
-## 14. Terraform teardown
+## 15. Terraform teardown
 
 From the repository root, with the intended Azure account/backend selected:
 
@@ -387,7 +395,7 @@ need beforehand. Backend bootstrap resources are separate and are not removed by
 this workload configuration. Do not delete them while state still needs to be
 retained or used for cleanup.
 
-## 15. Repository structure
+## 16. Repository structure
 
 ```text
 .
