@@ -1,8 +1,20 @@
-.venv
-.git
-.pytest_cache
-__pycache__
-*.pyc
-.env
-applications.db
-test.db
+# Deny everything by default, including infrastructure, state, secrets,
+# tests, virtual environments, caches, databases, and editor files.
+**
+
+# Dependency installation input; keep the dependency layer cacheable.
+!requirements.txt
+
+# Application modules and router. Add new runtime modules explicitly.
+!main.py
+!config.py
+!database.py
+!models.py
+!schemas.py
+!routers/applications.py
+
+# Alembic configuration, environment, template, and versioned migrations.
+!alembic.ini
+!alembic/env.py
+!alembic/script.py.mako
+!alembic/versions/*.py
