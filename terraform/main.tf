@@ -21,11 +21,20 @@ resource "azurerm_container_app_environment" "main" {
   }
 }
 
+locals {
+  database_url = "postgresql+asyncpg://${var.postgres_admin_username}:${random_password.postgres_admin.result}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${var.postgres_database_name}?ssl=require"
+}
+
 resource "azurerm_container_app" "api" {
   name                         = var.container_app_name
   container_app_environment_id = azurerm_container_app_environment.main.id
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
+
+  secret {
+    name  = "database-url"
+    value = local.database_url
+  }
 
   ingress {
     external_enabled           = true
@@ -50,8 +59,8 @@ resource "azurerm_container_app" "api" {
       memory = "0.5Gi"
 
       env {
-        name  = "DATABASE_URL"
-        value = "sqlite+aiosqlite:///./jobtracker.db"
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
       }
     }
   }
@@ -86,6 +95,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   sku_name              = "B_Standard_B1ms"
   storage_mb            = 32768
   backup_retention_days = 7
+  zone                  = "3"
 
   public_network_access_enabled = true
 
@@ -102,4 +112,54 @@ resource "azurerm_postgresql_flexible_server_database" "main" {
 
   charset   = "UTF8"
   collation = "en_US.utf8"
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "container_app" {
+  name             = "allow-container-app"
+  server_id        = azurerm_postgresql_flexible_server.main.id
+  start_ip_address = "20.50.214.197"
+  end_ip_address   = "20.50.214.197"
+}
+
+resource "azurerm_container_app_job" "database_migration" {
+  name                         = "job-tracker-db-migration"
+  container_app_environment_id = azurerm_container_app_environment.main.id
+  resource_group_name          = azurerm_resource_group.main.name
+  location                     = azurerm_resource_group.main.location
+
+  replica_timeout_in_seconds = 300
+  replica_retry_limit        = 1
+
+  manual_trigger_config {
+    parallelism              = 1
+    replica_completion_count = 1
+  }
+
+  secret {
+    name  = "database-url"
+    value = local.database_url
+  }
+
+  template {
+    container {
+      name   = "migration"
+      image  = var.container_image
+      cpu    = 0.25
+      memory = "0.5Gi"
+
+      command = ["alembic"]
+      args    = ["upgrade", "head"]
+
+      env {
+        name        = "DATABASE_URL"
+        secret_name = "database-url"
+      }
+    }
+  }
+
+  tags = {
+    project     = "job-application-tracker"
+    environment = "learning"
+    managed_by  = "terraform"
+  }
 }
