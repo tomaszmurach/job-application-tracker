@@ -24,6 +24,6 @@ output "container_app_environment_domain" {
 }
 
 output "container_app_fqdn" {
-  description = "Public FQDN of the API Container App"
-  value       = azurerm_container_app.api.latest_revision_fqdn
+  description = "Stable public ingress FQDN of the API Container App"
+  value       = azurerm_container_app.api.ingress[0].fqdn
 }

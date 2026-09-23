@@ -19,8 +19,8 @@ spec:
     spec:
       containers:
         - name: api
-          image: ghcr.io/tomaszmurach/job-application-tracker:latest
-          imagePullPolicy: Always
+          image: ghcr.io/tomaszmurach/job-application-tracker:515825c56d381c09e6f4462ddcf01e8bd43ca98c
+          imagePullPolicy: IfNotPresent
 
           ports:
             - containerPort: 8000

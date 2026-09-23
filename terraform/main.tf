@@ -62,6 +62,37 @@ resource "azurerm_container_app" "api" {
         name        = "DATABASE_URL"
         secret_name = "database-url"
       }
+
+      startup_probe {
+        transport               = "HTTP"
+        port                    = 8000
+        path                    = "/health"
+        initial_delay           = 5
+        interval_seconds        = 5
+        timeout                 = 2
+        failure_count_threshold = 48
+      }
+
+      liveness_probe {
+        transport               = "HTTP"
+        port                    = 8000
+        path                    = "/health"
+        initial_delay           = 10
+        interval_seconds        = 10
+        timeout                 = 2
+        failure_count_threshold = 3
+      }
+
+      readiness_probe {
+        transport               = "HTTP"
+        port                    = 8000
+        path                    = "/ready"
+        initial_delay           = 5
+        interval_seconds        = 5
+        timeout                 = 2
+        failure_count_threshold = 3
+        success_count_threshold = 1
+      }
     }
   }
 
