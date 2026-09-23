@@ -22,7 +22,7 @@ resource "azurerm_container_app_environment" "main" {
 }
 
 locals {
-  database_url = "postgresql+asyncpg://${var.postgres_admin_username}:${random_password.postgres_admin.result}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${var.postgres_database_name}?ssl=require"
+  database_url = "postgresql+asyncpg://${var.postgres_admin_username}:${urlencode(random_password.postgres_admin.result)}@${azurerm_postgresql_flexible_server.main.fqdn}:5432/${var.postgres_database_name}?ssl=require"
 }
 
 resource "azurerm_container_app" "api" {
